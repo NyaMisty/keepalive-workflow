@@ -1,0 +1,134 @@
+{
+  "projectName": "keepalive-workflow",
+  "projectOwner": "gautamkrishnar",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "commitConvention": "none",
+  "contributors": [
+    {
+      "login": "abitmore",
+      "name": "Abit",
+      "avatar_url": "https://avatars.githubusercontent.com/u/9946777?v=4",
+      "profile": "https://github.com/abitmore",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "Nigui",
+      "name": "Guillaume NICOLAS",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6088236?v=4",
+      "profile": "https://github.com/Nigui",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "dmaticzka",
+      "name": "Daniel Maticzka",
+      "avatar_url": "https://avatars.githubusercontent.com/u/113329?v=4",
+      "profile": "https://github.com/dmaticzka",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "iTrooz",
+      "name": "iTrooz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/42669835?v=4",
+      "profile": "https://itrooz.fr",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "lgmorand",
+      "name": "Louis-Guillaume MORAND",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6757079?v=4",
+      "profile": "http://lgmorand.github.io",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "kaovilai",
+      "name": "Tiger Kaovilai",
+      "avatar_url": "https://avatars.githubusercontent.com/u/11228024?v=4",
+      "profile": "https://github.com/kaovilai",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "Howard20181",
+      "name": "Howard Wu",
+      "avatar_url": "https://avatars.githubusercontent.com/u/40033067?v=4",
+      "profile": "https://github.com/Howard20181",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "liskin",
+      "name": "Tomáš Janoušek",
+      "avatar_url": "https://avatars.githubusercontent.com/u/300342?v=4",
+      "profile": "https://lisk.in/",
+      "contributions": [
+        "ideas"
+      ]
+    },
+    {
+      "login": "shihyuho",
+      "name": "Shihyu",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2764992?v=4",
+      "profile": "https://www.linkedin.com/in/methodho",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "AlexanderOMara",
+      "name": "Alexander O'Mara",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1740229?v=4",
+      "profile": "https://alexomara.com",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "rfay",
+      "name": "Randy Fay",
+      "avatar_url": "https://avatars.githubusercontent.com/u/112444?v=4",
+      "profile": "http://randyfay.com",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "julienloizelet",
+      "name": "Julien Loizelet",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20956510?v=4",
+      "profile": "https://github.com/julienloizelet",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "Han-Joon-Hyeok",
+      "name": "JoonHyeok Han",
+      "avatar_url": "https://avatars.githubusercontent.com/u/54902347?v=4",
+      "profile": "https://han-joon-hyeok.github.io/",
+      "contributions": [
+        "code"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "skipCi": true,
+  "commitType": "docs"
+}

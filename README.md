@@ -1,0 +1,333 @@
+# Keepalive Workflow [![npm version](https://badge.fury.io/js/keepalive-workflow.svg)](https://badge.fury.io/js/keepalive-workflow)
+GitHub action to prevent GitHub from suspending your cronjob based triggers due to repository inactivity
+
+### Why
+GitHub will suspend the scheduled trigger for GitHub action workflows if there is no commit in the repository for the past 60 days. The cron based triggers won't run unless a new commit is made. It shows the message "This scheduled workflow is disabled because there hasn't been activity in this repository for at least 60 days" under the cronjob triggered action.
+
+![preview](https://user-images.githubusercontent.com/8397274/105174930-4303e100-5b49-11eb-90ed-95a55697582f.png)
+
+### What
+This workflow will automatically use the GitHub API (or create a dummy commit) in your repo if the last commit in your repo is 45 days (default) ago.
+This will keep the cronjob trigger active so that it will run indefinitely without getting suspended by GitHub for inactivity.
+
+## How to use
+There are three ways you can consume this library in your GitHub actions
+
+### GitHub API Keepalive Workflow - Default (For GitHub Actions users)
+You can just include the library as a step after one of your favorite GitHub actions. Your workflow file should have the checkout action defined in one of your steps since this library needs git CLI to work.
+```yaml
+name: Github Action with a cronjob trigger
+on:
+  schedule:
+    - cron: "0 0 * * *"
+permissions:
+  actions: write
+jobs:
+  cronjob-based-github-action:
+    name: Cronjob based github action
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # - step 2
+      # - step n, use it as the last step
+      - uses: gautamkrishnar/keepalive-workflow@v2 # using the workflow with default settings
+```
+
+Moving the keepalive workflow into its own distinct job is strongly recommended for better security. For example:
+```yaml
+name: Github Action with a cronjob trigger
+on:
+  schedule:
+    - cron: "0 0 * * *"
+jobs:
+  main-job:
+    name: Main Job
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # - step1
+      # - step 2
+      # - Step N
+  keepalive-job:
+    name: Keepalive Workflow
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gautamkrishnar/keepalive-workflow@v2
+```
+##### Advanced use cases
+<details>
+  <summary>Keeping another workflow file active using keepalive workflow</summary>
+
+Lets assume that you have some build workflows:
+
+- `.github/workflows/build1.yml`
+```yaml
+name: Build 20
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  publish-npm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+          cache: "yarn"
+      - run: yarn install --frozen-lockfile
+      - run: yarn build
+```
+- `.github/workflows/build2.yml`
+```yaml
+name: Build 19
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  publish-npm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "19"
+          cache: "yarn"
+      - run: yarn install --frozen-lockfile
+      - run: yarn build
+```
+
+You can keep both of these workflows active using the following keepalive workflow code:
+```yaml
+name: Keepalive Workflow
+on:
+  schedule:
+    - cron: "0 0 * * *"
+permissions:
+  actions: write
+jobs:
+  cronjob-based-github-action:
+    name: Keepalive Workflow
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gautamkrishnar/keepalive-workflow@v2
+        with:
+          workflow_files: "build1.yml, build2.yml"
+          time_elapsed: "0"
+```
+</details>
+
+### Dummy Commit Keepalive Workflow (For GitHub Actions users)
+To use the workflow in auto commit mode you can use the following code, Please note that this will create empty commits in your repository every 45 days to keep it active.
+Use the default API based option instead for a clean Git commit history.
+```yaml
+name: Github Action with a cronjob trigger
+on:
+  schedule:
+    - cron: "0 0 * * *"
+permissions:
+  contents: write
+jobs:
+  cronjob-based-github-action:
+    name: Cronjob based github action
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # - step1
+      # - step 2
+      # - step n, use it as the last step
+      - uses: gautamkrishnar/keepalive-workflow@v2
+        with:
+          use_api: false
+
+```
+
+Moving the keepalive workflow into its own distinct job is strongly recommended here as well, for better security:
+```yaml
+name: Github Action with a cronjob trigger
+on:
+  schedule:
+    - cron: "0 0 * * *"
+jobs:
+  main-job:
+    name: Main Job
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # - step1
+      # - step 2
+      # - Step N
+  keepalive-job:
+    name: Keepalive Workflow
+    if: ${{ always() }}
+    needs: main-job
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gautamkrishnar/keepalive-workflow@v2
+        with:
+          use_api: false
+```
+
+<details>
+  <summary>Let's take an example of [Waka Readme](https://github.com/athul/waka-readme)</summary>
+
+```yaml
+name: My awesome readme
+on:
+  workflow_dispatch:
+  schedule:
+    # Runs at 12 am UTC
+    - cron: "0 0 * * *"
+
+jobs:
+  update-readme:
+    name: Update this repo's README
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: athul/waka-readme@master
+        with:
+          WAKATIME_API_KEY: ${{ secrets.WAKATIME_API_KEY }}
+      - uses: gautamkrishnar/keepalive-workflow@v2 # using the workflow
+```
+</details>
+
+### Using via NPM (For GitHub Actions developers)
+For developers creating GitHub actions, you can consume the library in your javascript-based GitHub action by installing it from [NPM](https://www.npmjs.com/package/keepalive-workflow). Make sure that your GitHub action uses checkout action since this library needs it as a dependency.
+You can also ask your users to include it as an additional step as mentioned in the first part.
+
+#### Install the package
+Install via NPM:
+```bash
+npm i keepalive-workflow
+```
+
+Install via Yarn:
+```bash
+yarn add keepalive-workflow
+```
+
+#### Use it in your own GitHub action source code
+```javascript
+const core = require('@actions/core');
+const { KeepAliveWorkflow, APIKeepAliveWorkflow } = require('keepalive-workflow');
+
+// Using the lib in Dummy commits mode
+KeepAliveWorkflow(githubToken, committerUsername, committerEmail, commitMessage, timeElapsed)
+  .then((message) => {
+    core.info(message);
+    process.exit(0);
+  })
+  .catch((error) => {
+    core.error(error);
+    process.exit(1);
+  });
+
+// Using the lib in GitHub API mode
+APIKeepAliveWorkflow(githubToken, {
+  timeElapsed
+}).then((message) => {
+    core.info(message);
+    process.exit(0);
+  })
+  .catch((error) => {
+    core.error(error);
+    process.exit(1);
+  });
+```
+
+## Options
+### For GitHub Action
+If you use the workflow as mentioned via GitHub actions following are the options available to you to customize its behavior.
+
+| Option               | Default Value                                                          | Description                                                                                                                                                                                                           | Required |
+|----------------------|------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+| `gh_token`           | your default GitHub token with repo scope                              | GitHub access token with Repo scope                                                                                                                                                                                   | No       |
+| `commit_message`     | `Automated commit by Keepalive Workflow to keep the repository active` | Commit message used while committing to the repo                                                                                                                                                                      | No       |
+| `committer_username` | `gkr-bot`                                                              | Username used while committing to the repo                                                                                                                                                                            | No       |
+| `committer_email`    | `gkr@tuta.io`                                                          | Email id used while committing to the repo                                                                                                                                                                            | No       |
+| `time_elapsed`       | `45`                                                                   | Time elapsed from the previous commit to trigger a new automated commit or API call (in days). Set 0 to skip commit date checking, this will also removes the dependency with `actions/checkout` workflow in your job | No       |
+| `auto_push`          | `true`                                                                 | Defines if the workflow pushes the changes automatically                                                                                                                                                              | No       |
+| `auto_write_check`   | `false`                                                                | Specifies whether the workflow will verify the repository's write access privilege for the token before executing                                                                                                     | No       |
+| `use_api`            | `true`                                                                 | Instead of using dummy commits, workflow uses GitHub API to keep the repository active                                                                                                                                | No       |
+| `workflow_files`     | `""`                                                                   | Comma separated list of workflow files. You can use this to keepalive another workflow that's not a part of keepalive workflow's file. See [example](#advanced-use-cases) for more info.                              | No       |
+
+
+### For Javascript Library
+If you are using the JS Library version of the project, please consult the function's DocStrings in [library.js](library.js) to see the list of available parameters.
+
+### Migrating from v1 to v2
+If you are an existing user which used this workflow's v1 version, you can easily migrate to v2 by simply updating the permissions key in your workflow:
+
+Change:
+```yaml
+permissions:
+  contents: write
+```
+to
+```yaml
+permissions:
+  actions: write
+```
+And change the workflow's version from `gautamkrishnar/keepalive-workflow@v1` or `gautamkrishnar/keepalive-workflow@master` to `gautamkrishnar/keepalive-workflow@v2`. This will automatically start using the workflow's API based method. No more dummy commits 🕺 .
+
+### Workflow Versions
+- v1 version of project used dummy commit by default to keep the repository active, It will no longer be maintained except for security patches and bug fixes. You can view the source coe of v1 version at the [master](https://github.com/gautamkrishnar/keepalive-workflow/tree/master) branch of this repository. This branch is kept intact for people who are using `gautamkrishnar/keepalive-workflow@master`.
+- v2 version will be developed and maintained by keeping the [version2](https://github.com/gautamkrishnar/keepalive-workflow/tree/version2) branch as the source. Going forward, This will be the main branch.
+
+### FAQs and Common issues
+- [Error Code 128 / `GH006: Protected branch update failed`](https://github.com/gautamkrishnar/keepalive-workflow/discussions/13)
+
+## Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/abitmore"><img src="https://avatars.githubusercontent.com/u/9946777?v=4?s=100" width="100px;" alt="Abit"/><br /><sub><b>Abit</b></sub></a><br /><a href="https://github.com/gautamkrishnar/keepalive-workflow/commits?author=abitmore" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Nigui"><img src="https://avatars.githubusercontent.com/u/6088236?v=4?s=100" width="100px;" alt="Guillaume NICOLAS"/><br /><sub><b>Guillaume NICOLAS</b></sub></a><br /><a href="https://github.com/gautamkrishnar/keepalive-workflow/commits?author=Nigui" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/dmaticzka"><img src="https://avatars.githubusercontent.com/u/113329?v=4?s=100" width="100px;" alt="Daniel Maticzka"/><br /><sub><b>Daniel Maticzka</b></sub></a><br /><a href="https://github.com/gautamkrishnar/keepalive-workflow/commits?author=dmaticzka" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://itrooz.fr"><img src="https://avatars.githubusercontent.com/u/42669835?v=4?s=100" width="100px;" alt="iTrooz"/><br /><sub><b>iTrooz</b></sub></a><br /><a href="https://github.com/gautamkrishnar/keepalive-workflow/commits?author=iTrooz" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://lgmorand.github.io"><img src="https://avatars.githubusercontent.com/u/6757079?v=4?s=100" width="100px;" alt="Louis-Guillaume MORAND"/><br /><sub><b>Louis-Guillaume MORAND</b></sub></a><br /><a href="https://github.com/gautamkrishnar/keepalive-workflow/commits?author=lgmorand" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/kaovilai"><img src="https://avatars.githubusercontent.com/u/11228024?v=4?s=100" width="100px;" alt="Tiger Kaovilai"/><br /><sub><b>Tiger Kaovilai</b></sub></a><br /><a href="https://github.com/gautamkrishnar/keepalive-workflow/commits?author=kaovilai" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Howard20181"><img src="https://avatars.githubusercontent.com/u/40033067?v=4?s=100" width="100px;" alt="Howard Wu"/><br /><sub><b>Howard Wu</b></sub></a><br /><a href="https://github.com/gautamkrishnar/keepalive-workflow/commits?author=Howard20181" title="Code">💻</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://lisk.in/"><img src="https://avatars.githubusercontent.com/u/300342?v=4?s=100" width="100px;" alt="Tomáš Janoušek"/><br /><sub><b>Tomáš Janoušek</b></sub></a><br /><a href="#ideas-liskin" title="Ideas, Planning, & Feedback">🤔</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.linkedin.com/in/methodho"><img src="https://avatars.githubusercontent.com/u/2764992?v=4?s=100" width="100px;" alt="Shihyu"/><br /><sub><b>Shihyu</b></sub></a><br /><a href="https://github.com/gautamkrishnar/keepalive-workflow/commits?author=shihyuho" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://alexomara.com"><img src="https://avatars.githubusercontent.com/u/1740229?v=4?s=100" width="100px;" alt="Alexander O'Mara"/><br /><sub><b>Alexander O'Mara</b></sub></a><br /><a href="https://github.com/gautamkrishnar/keepalive-workflow/commits?author=AlexanderOMara" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://randyfay.com"><img src="https://avatars.githubusercontent.com/u/112444?v=4?s=100" width="100px;" alt="Randy Fay"/><br /><sub><b>Randy Fay</b></sub></a><br /><a href="https://github.com/gautamkrishnar/keepalive-workflow/issues?q=author%3Arfay" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/julienloizelet"><img src="https://avatars.githubusercontent.com/u/20956510?v=4?s=100" width="100px;" alt="Julien Loizelet"/><br /><sub><b>Julien Loizelet</b></sub></a><br /><a href="https://github.com/gautamkrishnar/keepalive-workflow/issues?q=author%3Ajulienloizelet" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://han-joon-hyeok.github.io/"><img src="https://avatars.githubusercontent.com/u/54902347?v=4?s=100" width="100px;" alt="JoonHyeok Han"/><br /><sub><b>JoonHyeok Han</b></sub></a><br /><a href="https://github.com/gautamkrishnar/keepalive-workflow/commits?author=Han-Joon-Hyeok" title="Code">💻</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
+
+## License
+This project uses [GNU GENERAL PUBLIC LICENSE](LICENSE)
+
+## Liked it?
+
+Hope you liked this project, don't forget to give it a star ⭐.
