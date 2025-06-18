@@ -1,5 +1,11 @@
 # Keepalive Workflow [![npm version](https://badge.fury.io/js/keepalive-workflow.svg)](https://badge.fury.io/js/keepalive-workflow)
-GitHub action to prevent GitHub from suspending your cronjob based triggers due to repository inactivity
+
+> The [original repository](https://github.com/gautamkrishnar/keepalive-workflow) has been disabled by GitHub Staff due to a violation of GitHub's terms of service.  
+> This is a backup, source from https://gitcode.com/gh_mirrors/ke/keepalive-workflow
+
+---
+
+GitHub action to prevent GitHub from suspending your cronjob based triggers due to repository inactivity.
 
 ### Why
 GitHub will suspend the scheduled trigger for GitHub action workflows if there is no commit in the repository for the past 60 days. The cron based triggers won't run unless a new commit is made. It shows the message "This scheduled workflow is disabled because there hasn't been activity in this repository for at least 60 days" under the cronjob triggered action.
